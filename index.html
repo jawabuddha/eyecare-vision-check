@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Distance vision check</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+:root{
+  --bg:#F4F6F8; --surface:#FFFFFF; --ink:#17202B; --muted:#56616E; --line:#D3DAE2;
+  --accent:#1D5CA8; --accent-ink:#FFFFFF; --accent-soft:#E2EBF7;
+  --ok:#2B7A4B; --warn:#94600A; --alert:#B3261E; --warn-soft:#FAF0DC;
+  --chart-bg:#FFFFFF; --chart-ink:#000000; --chart-muted:#5F6B78; --chart-ctl:#ECEFF3; --chart-ctl-ink:#1F2933; --chart-press:#D7DDE3;
+  --chart-btn:#1D5CA8; --chart-btn-ink:#FFFFFF;
+  --font:"Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top, 0px);
+  padding-bottom:env(safe-area-inset-bottom, 0px);
+  background:var(--bg);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F151C; --surface:#17202A; --ink:#E6EBF0; --muted:#9BA8B6; --line:#2C3845;
+    --accent:#86AFF0; --accent-ink:#0B1420; --accent-soft:#1B2A3E;
+    --ok:#74C79A; --warn:#E5B865; --alert:#F2948B; --warn-soft:#2E240F;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F151C; --surface:#17202A; --ink:#E6EBF0; --muted:#9BA8B6; --line:#2C3845;
+  --accent:#86AFF0; --accent-ink:#0B1420; --accent-soft:#1B2A3E;
+  --ok:#74C79A; --warn:#E5B865; --alert:#F2948B; --warn-soft:#2E240F;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+[hidden]{display:none !important}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top, 0px);-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:1.0625rem;line-height:1.5}
+.wrap{max-width:36rem;margin:0 auto;padding:1.5rem 1.25rem 3rem}
+h1{font-size:2.25rem;line-height:1.1;margin:.5rem 0 .75rem;font-weight:700;letter-spacing:-.01em}
+h2{font-size:1.625rem;line-height:1.2;margin:.25rem 0 .75rem;font-weight:700}
+h3{font-size:1.125rem;line-height:1.3;margin:1.75rem 0 .5rem}
+h1:focus,h2:focus{outline:none}
+p{margin:0 0 1rem}
+ul{margin:0 0 1rem;padding-left:1.25rem}
+li{margin:.3rem 0}
+.lede{font-size:1.1875rem}
+.step{color:var(--muted);font-size:.9375rem;margin:0}
+.hint{color:var(--muted);font-size:.9375rem;margin:.5rem 0 0}
+.hint.bad{color:var(--alert)}
+.fineprint{color:var(--muted);font-size:.875rem;margin-top:1.75rem}
+
+/* Hero: a descending line of an eye chart */
+.chartline{display:flex;align-items:flex-end;gap:16px;height:72px;margin:.25rem 0 1rem;color:var(--ink)}
+.chartline svg{display:block;fill:currentColor;flex:none}
+@media (prefers-reduced-motion: no-preference){
+  .chartline svg{opacity:0;animation:appear .45s ease-out forwards}
+  .chartline svg:nth-child(2){animation-delay:.14s}
+  .chartline svg:nth-child(3){animation-delay:.28s}
+  .chartline svg:nth-child(4){animation-delay:.42s}
+  .chartline svg:nth-child(5){animation-delay:.56s}
+}
+@keyframes appear{from{opacity:0}to{opacity:1}}
+
+fieldset{border:0;padding:0;margin:1.5rem 0 0;min-width:0}
+legend{font-weight:700;margin-bottom:.5rem;padding:0}
+.choice label{display:flex;align-items:center;gap:.75rem;padding:.75rem .9rem;border:1px solid var(--line);border-radius:10px;margin-bottom:.5rem;background:var(--surface);cursor:pointer}
+.choice label:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.choice label:has(input:disabled){opacity:.55;cursor:not-allowed}
+.choice input{accent-color:var(--accent);width:1.15rem;height:1.15rem;margin:0;flex:none}
+.seg{display:flex;gap:.5rem}
+.seg label{flex:1;justify-content:center;margin:0}
+
+button{font:inherit;color:inherit}
+.primary{display:block;width:100%;padding:.95rem 1rem;border:0;border-radius:10px;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:1.0625rem;cursor:pointer;margin-top:1.5rem}
+.primary:disabled{opacity:.45;cursor:not-allowed}
+.secondary{display:block;width:100%;padding:.9rem 1rem;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font-weight:700;cursor:pointer;margin-top:.75rem}
+.link{background:none;border:0;padding:.6rem 0;margin-top:.5rem;color:var(--accent);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.link.danger{color:var(--alert)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+/* Calibration */
+.cardstage{display:flex;justify-content:center;align-items:flex-start;height:240px;overflow:hidden;margin:1.25rem 0 1rem;-webkit-mask-image:linear-gradient(#000 65%,transparent);mask-image:linear-gradient(#000 65%,transparent)}
+.card{flex:none;position:relative;border:2px solid var(--accent);border-radius:12px;background:var(--accent-soft)}
+.chip{position:absolute;top:14%;left:16%;width:26%;aspect-ratio:1.25;border:1.5px solid var(--accent);border-radius:5px}
+.slider-row{display:flex;align-items:center;gap:.75rem}
+.slider-row input{flex:1;min-width:0;accent-color:var(--accent)}
+.nudge{flex:none;width:2.75rem;height:2.75rem;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:1.4rem;line-height:1;cursor:pointer}
+
+/* Setup */
+.field-label{display:block;font-weight:700;margin:1.5rem 0 .5rem}
+.dist-row{display:flex;gap:.5rem}
+input[type=number],select{font:inherit;padding:.7rem .8rem;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink)}
+input[type=number]{width:7rem}
+.howto{margin-top:1.5rem;padding:1rem;border-radius:10px;background:var(--surface);border:1px solid var(--line)}
+.howto p:last-child{margin:0}
+
+/* Test overlay: always a white chart, whatever the theme */
+.test{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;background:var(--chart-bg);color:var(--chart-ink);padding-top:env(safe-area-inset-top, 0px);padding-bottom:env(safe-area-inset-bottom, 0px);user-select:none;-webkit-user-select:none}
+.test-top{display:flex;align-items:center;gap:.75rem;padding:.6rem 1rem;color:var(--chart-muted);font-size:.9375rem}
+.test-top .grow{flex:1}
+.test-top strong{color:var(--chart-ink)}
+.quit{width:2.5rem;height:2.5rem;border:0;border-radius:50%;background:var(--chart-ctl);color:var(--chart-ctl-ink);font-size:1.4rem;line-height:1;cursor:pointer}
+.stage{flex:1;min-height:0;position:relative;display:flex;align-items:center;justify-content:center;touch-action:none}
+#opto{display:block;fill:var(--chart-ink)}
+#opto.blank{visibility:hidden}
+.pause{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.9rem;padding:1.5rem;text-align:center;background:var(--chart-bg)}
+.pause p{max-width:24rem;margin:0;color:var(--chart-ink);font-size:1.1875rem}
+.pause p.sub{color:var(--chart-muted);font-size:1rem}
+.pause .go{width:auto;min-width:14rem;margin-top:.5rem;background:var(--chart-btn);color:var(--chart-btn-ink)}
+.pad{display:grid;grid-template-columns:repeat(3,4.5rem);grid-template-rows:repeat(3,3.25rem);gap:.45rem;justify-content:center;padding:.5rem 0 1rem;touch-action:manipulation}
+.pad button{border:0;border-radius:12px;background:var(--chart-ctl);color:var(--chart-ctl-ink);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.pad button:active{background:var(--chart-press)}
+.pad svg{width:22px;height:22px;fill:currentColor}
+.pad .cant{font-size:.8125rem;line-height:1.1}
+.pad .r-right svg{transform:rotate(90deg)}
+.pad .r-down svg{transform:rotate(180deg)}
+.pad .r-left svg{transform:rotate(270deg)}
+.mic{text-align:center;color:var(--chart-muted);font-size:.875rem;margin:0 1rem .5rem}
+.mic-resume{display:block;margin:0 auto .5rem;padding:.55rem 1.1rem;border:0;border-radius:999px;background:var(--chart-ctl);color:var(--chart-ctl-ink);font-size:.9375rem;cursor:pointer}
+
+/* Results */
+.meta{color:var(--muted)}
+.eyes{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin:1.25rem 0 0}
+@media (max-width:340px){.eyes{grid-template-columns:1fr}}
+.eye{padding:.1rem 0 .1rem .9rem;border-left:4px solid var(--line)}
+.eye.ok{border-color:var(--ok)}
+.eye.warn{border-color:var(--warn)}
+.eye.alert{border-color:var(--alert)}
+.eye h3{margin:0;font-size:1rem;font-weight:400;color:var(--muted)}
+.snellen{font-size:2.75rem;font-weight:700;line-height:1.05;margin:.2rem 0 .15rem;letter-spacing:-.01em}
+.alt{color:var(--muted);font-size:.875rem;margin:0 0 .75rem}
+.verdict{font-weight:700;margin:0 0 .25rem}
+.eye .note{font-size:.9375rem;margin:0 0 .6rem}
+.eye .note.flag{color:var(--alert);font-weight:700}
+.callout{margin:1.5rem 0 0;padding:.85rem 1rem;border-radius:10px;background:var(--warn-soft);font-size:.9375rem}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.9375rem}
+th{text-align:left;font-weight:400;color:var(--muted);padding:.4rem .5rem .4rem 0}
+td{padding:.55rem .5rem .55rem 0;border-top:1px solid var(--line);white-space:nowrap}
+.empty{color:var(--muted)}
+</style>
+</head>
+<body>
+<main class="wrap">
+
+  <section id="intro">
+    <div class="chartline" aria-hidden="true">
+      <svg viewBox="0 0 5 5" width="64" height="64"><path d="M0 0H5V1H1V2H5V3H1V4H5V5H0Z"/></svg>
+      <svg viewBox="0 0 5 5" width="46" height="46"><path transform="rotate(270 2.5 2.5)" d="M0 0H5V1H1V2H5V3H1V4H5V5H0Z"/></svg>
+      <svg viewBox="0 0 5 5" width="34" height="34"><path transform="rotate(180 2.5 2.5)" d="M0 0H5V1H1V2H5V3H1V4H5V5H0Z"/></svg>
+      <svg viewBox="0 0 5 5" width="25" height="25"><path transform="rotate(90 2.5 2.5)" d="M0 0H5V1H1V2H5V3H1V4H5V5H0Z"/></svg>
+      <svg viewBox="0 0 5 5" width="18" height="18"><path d="M0 0H5V1H1V2H5V3H1V4H5V5H0Z"/></svg>
+    </div>
+    <h1>Distance vision check</h1>
+    <p class="lede">See how sharp your distance vision is with your current glasses or contacts, one eye at a time. Repeat it every few months to spot when it may be time for an eye exam.</p>
+
+    <fieldset class="choice">
+      <legend>What are you wearing for this check?</legend>
+      <div class="seg">
+        <label><input type="radio" name="corr" value="glasses" checked> Glasses</label>
+        <label><input type="radio" name="corr" value="contacts"> Contacts</label>
+        <label><input type="radio" name="corr" value="none"> Nothing</label>
+      </div>
+    </fieldset>
+
+    <h3>You’ll need</h3>
+    <ul>
+      <li>A bank or ID card, to size the letters to your screen</li>
+      <li>A tape measure and a spot about 3 m (10 ft) from the screen</li>
+      <li>A helper to tap your answers, a keyboard, or your voice</li>
+      <li>Good room light, with screen brightness turned up</li>
+    </ul>
+
+    <button class="primary" id="startBtn">Start the check</button>
+    <button class="link" id="historyBtn" hidden>See past results</button>
+
+    <p class="fineprint">This is a prototype, not a medical test, and it doesn’t check eye health. See an eye doctor right away for sudden vision loss, new flashes or floaters, a shadow over your vision, or eye pain.</p>
+  </section>
+
+  <section id="cal" hidden>
+    <p class="step">Step 1 of 3</p>
+    <h2>Size your screen</h2>
+    <p>Hold a bank or ID card upright against the screen. Drag the slider until the outline is exactly as wide as the card.</p>
+    <div class="cardstage"><div class="card" id="card"><div class="chip"></div></div></div>
+    <div class="slider-row">
+      <button class="nudge" id="calMinus" aria-label="Make the outline narrower">−</button>
+      <input type="range" id="calRange" aria-label="Outline width">
+      <button class="nudge" id="calPlus" aria-label="Make the outline wider">+</button>
+    </div>
+    <p class="hint">Any standard bank, ID, or loyalty card works. They’re all the same size.</p>
+    <button class="primary" id="calSave">Save screen size</button>
+  </section>
+
+  <section id="setup" hidden>
+    <p class="step">Step 2 of 3</p>
+    <h2>Set up the distance</h2>
+    <p>Prop the screen up at eye level, step back, and measure from the screen to your eyes.</p>
+
+    <label class="field-label" for="dist">Distance from the screen</label>
+    <div class="dist-row">
+      <input id="dist" type="number" inputmode="decimal" step="0.1" min="1">
+      <select id="unit" aria-label="Unit">
+        <option value="m">meters</option>
+        <option value="ft">feet</option>
+      </select>
+    </div>
+    <p class="hint" id="distNote"></p>
+
+    <fieldset class="choice">
+      <legend>How will you answer?</legend>
+      <label><input type="radio" name="mode" value="tap" checked> A helper taps, or I use arrow keys</label>
+      <label><input type="radio" name="mode" value="voice" id="voiceOpt"> I’ll say it out loud (experimental)</label>
+    </fieldset>
+    <p class="hint" id="voiceNote"></p>
+    <div id="voiceTest" hidden>
+      <button class="secondary" id="voiceTestBtn">Test voice</button>
+      <p class="hint" id="voiceTestOut">Tap Test voice and say “left” or “up” to check that the app hears you.</p>
+    </div>
+
+    <div class="howto">
+      <p>You’ll see one letter E at a time. Answer which way its arms point: up, down, left, or right.</p>
+      <p>If you can’t make it out, guess. Guesses count. Use “Can’t tell” only when it’s a blur.</p>
+    </div>
+
+    <button class="primary" id="setupGo">Start the test</button>
+    <button class="link" id="recal">Resize the screen again</button>
+  </section>
+
+  <section id="result" hidden>
+    <h2 id="resultTitle">Your results</h2>
+    <div id="resultBody"></div>
+    <div id="resultActions">
+      <button class="primary" id="againBtn">Test again</button>
+      <button class="secondary" id="baseBtn">Make these my new baseline</button>
+    </div>
+    <h3>History</h3>
+    <div id="historyBody"></div>
+    <button class="link" id="homeBtn">Back to start</button><br>
+    <button class="link danger" id="clearBtn">Clear saved results</button>
+    <p class="fineprint">A sharp score doesn’t mean healthy eyes. Glaucoma, for example, can affect side vision while chart scores stay normal, so keep up regular eye exams. See an eye doctor right away for sudden vision loss, new flashes or floaters, a shadow over your vision, or eye pain.</p>
+  </section>
+</main>
+
+<section class="test" id="test" hidden aria-live="polite">
+  <div class="test-top">
+    <strong id="testEye">Right eye</strong>
+    <span class="grow" id="testProg"></span>
+    <button class="quit" id="quit" aria-label="Stop the test">×</button>
+  </div>
+  <div class="stage" id="stage">
+    <svg id="opto" class="blank" viewBox="-0.5 -0.5 6 6" role="img" aria-label="Letter E">
+      <g id="bars">
+        <rect x="0" y="-3.5" width="5" height="1"/>
+        <rect x="0" y="7.5" width="5" height="1"/>
+        <rect x="-3.5" y="0" width="1" height="5"/>
+        <rect x="7.5" y="0" width="1" height="5"/>
+      </g>
+      <g id="eG"><path d="M0 0H5V1H1V2H5V3H1V4H5V5H0Z"/></g>
+    </svg>
+    <div class="pause" id="pause">
+      <p id="pauseMsg"></p>
+      <p class="sub">Answer which way the arms of the E point.</p>
+      <button class="primary go" id="pauseGo">Start right eye</button>
+    </div>
+  </div>
+  <p class="mic" id="mic" hidden></p>
+  <button class="mic-resume" id="micResume" hidden>Tap to resume listening</button>
+  <div class="pad" id="pad" hidden>
+    <span></span>
+    <button data-dir="up" aria-label="Up"><svg viewBox="0 0 24 24"><path d="M12 3l8 9h-5v9h-6v-9H4z"/></svg></button>
+    <span></span>
+    <button data-dir="left" class="r-left" aria-label="Left"><svg viewBox="0 0 24 24"><path d="M12 3l8 9h-5v9h-6v-9H4z"/></svg></button>
+    <button data-dir="none" class="cant">Can’t tell</button>
+    <button data-dir="right" class="r-right" aria-label="Right"><svg viewBox="0 0 24 24"><path d="M12 3l8 9h-5v9h-6v-9H4z"/></svg></button>
+    <span></span>
+    <button data-dir="down" class="r-down" aria-label="Down"><svg viewBox="0 0 24 24"><path d="M12 3l8 9h-5v9h-6v-9H4z"/></svg></button>
+    <span></span>
+  </div>
+</section>
+
+<script>
+(function(){
+  'use strict';
+  var $ = function(s){ return document.querySelector(s); };
+  var $$ = function(s){ return Array.prototype.slice.call(document.querySelectorAll(s)); };
+
+  // ISO ID-1 card, held upright: short side is the width we match
+  var CARD_W = 53.98, CARD_H = 85.6;
+  // Snellen equivalents for logMAR -0.3 ... 1.3 in 0.1 steps
+  var FT = ['10','12.5','16','20','25','32','40','50','63','80','100','125','160','200','250','320','400'];
+  var M  = ['3','3.8','4.8','6','7.5','9.5','12','15','19','24','30','38','48','60','75','95','120'];
+  var ROT = { right:0, down:90, left:180, up:270 };
+  var KEY = 'eyecheck-distance-v1';
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  function blankStore(){ return { pxPerMm:null, unit:null, history:[], baselines:{} }; }
+  function load(){
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (!raw) return blankStore();
+      var s = JSON.parse(raw);
+      var out = blankStore();
+      if (s && typeof s === 'object') {
+        if (typeof s.pxPerMm === 'number') out.pxPerMm = s.pxPerMm;
+        if (s.unit === 'm' || s.unit === 'ft') out.unit = s.unit;
+        if (Array.isArray(s.history)) out.history = s.history;
+        if (s.baselines && typeof s.baselines === 'object') out.baselines = s.baselines;
+      }
+      return out;
+    } catch (e) { return blankStore(); }
+  }
+  var store = load();
+  function persist(){ try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {} }
+
+  var usLocale = /^en-US/i.test(navigator.language || '');
+  var st = {
+    corr: 'glasses',
+    unit: store.unit || (usLocale ? 'ft' : 'm'),
+    distMm: 3000,
+    mode: 'tap',
+    results: {},
+    eye: 'R',
+    last: null
+  };
+  st.distMm = st.unit === 'ft' ? 3048 : 3000;
+
+  // ---------- helpers ----------
+  function idx(lm){ return Math.min(16, Math.max(0, Math.round(lm * 10) + 3)); }
+  function fmtSnellen(lm){ return st.unit === 'ft' ? '20/' + FT[idx(lm)] : '6/' + M[idx(lm)]; }
+  function altSnellen(lm){ return st.unit === 'ft' ? '6/' + M[idx(lm)] : '20/' + FT[idx(lm)]; }
+  function fmtDate(t){ return new Date(t).toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' }); }
+  function fmtDist(mm, unit){ return unit === 'ft' ? (Math.round(mm / 304.8 * 2) / 2) + ' ft' : (Math.round(mm / 100) / 10) + ' m'; }
+  var CORR_LABEL = { glasses:'with glasses', contacts:'with contacts', none:'without glasses or contacts' };
+  var CORR_SHORT = { glasses:'Glasses', contacts:'Contacts', none:'Nothing' };
+
+  var SCREENS = ['intro', 'cal', 'setup', 'result'];
+  function show(id){
+    SCREENS.forEach(function(s){ $('#' + s).hidden = (s !== id); });
+    window.scrollTo(0, 0);
+    var h = $('#' + id).querySelector('h1, h2');
+    if (h) { h.tabIndex = -1; try { h.focus({ preventScroll:true }); } catch (e) {} }
+  }
+
+  // Letter height in CSS px for logMAR level L (tenths)
+  function sizePx(L){
+    var ang = (5 / 60) * (Math.PI / 180) * Math.pow(10, L / 10);
+    return 2 * st.distMm * Math.tan(ang / 2) * store.pxPerMm;
+  }
+  function rangeFor(w, h){
+    var maxSize = Math.max(30, Math.min(w, h)) * 0.92;
+    var maxL = 10;
+    while (maxL > -3 && sizePx(maxL) > maxSize) maxL--;
+    var dpr = window.devicePixelRatio || 1;
+    var minL = -3;
+    while (minL < maxL && (sizePx(minL) / 5) * dpr < 1.5) minL++;
+    return { maxL:maxL, minL:minL, maxSize:maxSize };
+  }
+
+  // ---------- intro ----------
+  function openIntro(){
+    $('#historyBtn').hidden = !store.history.length;
+    show('intro');
+  }
+  $('#startBtn').addEventListener('click', function(){
+    st.corr = document.querySelector('input[name=corr]:checked').value;
+    if (store.pxPerMm) openSetup(); else openCal();
+  });
+  $('#historyBtn').addEventListener('click', function(){ renderResult(null, null); show('result'); });
+
+  // ---------- calibration ----------
+  function openCal(){
+    var r = $('#calRange');
+    var vw = document.documentElement.clientWidth;
+    var max = Math.max(200, Math.floor(Math.min(vw - 48, 480)));
+    r.min = '120'; r.max = String(max); r.step = '0.5';
+    var coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    var guess = (store.pxPerMm || (coarse ? 6.3 : 3.78)) * CARD_W;
+    r.value = String(Math.min(max, Math.max(120, guess)));
+    drawCard();
+    show('cal');
+  }
+  function drawCard(){
+    var w = parseFloat($('#calRange').value);
+    var c = $('#card');
+    c.style.width = w + 'px';
+    c.style.height = (w * CARD_H / CARD_W) + 'px';
+  }
+  function nudge(d){
+    var r = $('#calRange');
+    r.value = String(Math.min(+r.max, Math.max(+r.min, +r.value + d)));
+    drawCard();
+  }
+  $('#calRange').addEventListener('input', drawCard);
+  $('#calMinus').addEventListener('click', function(){ nudge(-0.5); });
+  $('#calPlus').addEventListener('click', function(){ nudge(0.5); });
+  $('#calSave').addEventListener('click', function(){
+    store.pxPerMm = parseFloat($('#calRange').value) / CARD_W;
+    persist();
+    openSetup();
+  });
+
+  // ---------- setup ----------
+  function openSetup(){
+    $('#unit').value = st.unit;
+    $('#dist').value = st.unit === 'ft'
+      ? String(Math.round(st.distMm / 304.8 * 2) / 2)
+      : String(Math.round(st.distMm / 100) / 10);
+    if (!SR) {
+      $('#voiceOpt').disabled = true;
+      $('#voiceNote').textContent = 'Voice answers aren’t available in this viewer. Open the link in Safari or Chrome to use them.';
+      document.querySelector('input[name=mode][value=tap]').checked = true;
+    }
+    updateDist();
+    updateVoiceUI();
+    show('setup');
+  }
+  function readDist(){
+    var v = parseFloat($('#dist').value);
+    if (!isFinite(v) || v <= 0) return null;
+    return $('#unit').value === 'ft' ? v * 304.8 : v * 1000;
+  }
+  function updateDist(){
+    var mm = readDist();
+    var note = $('#distNote'), go = $('#setupGo');
+    if (mm == null || mm < 1500 || mm > 6100) {
+      note.textContent = 'Enter a distance between 1.5 and 6 m (5 to 20 ft).';
+      note.className = 'hint bad';
+      go.disabled = true;
+      return;
+    }
+    st.distMm = mm;
+    go.disabled = false;
+    var r = rangeFor(window.innerWidth - 24, window.innerHeight - 300);
+    var msg;
+    if (r.maxL < 3) {
+      msg = 'At this distance the screen is too small to show useful letter sizes. Move closer or use a bigger screen.';
+    } else {
+      msg = 'At this distance your screen can show ' + fmtSnellen(r.maxL / 10) + ' down to ' + fmtSnellen(r.minL / 10) + '.';
+    }
+    if (mm < 2950) msg += ' Closer than 3 m (10 ft) can miss small changes in nearsighted prescriptions.';
+    note.textContent = msg;
+    note.className = 'hint';
+  }
+  $('#dist').addEventListener('input', updateDist);
+  $('#unit').addEventListener('change', function(e){
+    var v = parseFloat($('#dist').value);
+    st.unit = e.target.value;
+    store.unit = st.unit; persist();
+    if (isFinite(v)) {
+      $('#dist').value = st.unit === 'ft'
+        ? String(Math.round(v * 3.28084 * 2) / 2)
+        : String(Math.round(v / 3.28084 * 10) / 10);
+    }
+    updateDist();
+  });
+  $('#setupGo').addEventListener('click', function(){
+    endVoiceTest();
+    st.mode = document.querySelector('input[name=mode]:checked').value;
+    st.results = {};
+    openTest();
+  });
+  $('#recal').addEventListener('click', openCal);
+
+  // ---------- wake lock ----------
+  var wl = null;
+  function lockOn(){
+    try {
+      if (navigator.wakeLock && navigator.wakeLock.request) {
+        navigator.wakeLock.request('screen').then(function(l){ wl = l; }).catch(function(){});
+      }
+    } catch (e) {}
+  }
+  function lockOff(){ try { if (wl) wl.release(); } catch (e) {} wl = null; }
+
+  // ---------- test ----------
+  var T = null;
+  function openTest(){
+    $('#test').hidden = false;
+    document.body.style.overflow = 'hidden';
+    lockOn();
+    pauseFor('R');
+  }
+  function closeTest(){
+    stopVoice();
+    $('#test').hidden = true;
+    document.body.style.overflow = '';
+    lockOff();
+    T = null;
+  }
+  function pauseFor(eye){
+    st.eye = eye;
+    T = null;
+    stopVoice();
+    $('#opto').classList.add('blank');
+    $('#pad').hidden = true;
+    $('#pause').hidden = false;
+    $('#testEye').textContent = eye === 'R' ? 'Right eye' : 'Left eye';
+    $('#testProg').textContent = '';
+    $('#pauseMsg').textContent = eye === 'R'
+      ? 'Cover your left eye with your palm, without pressing. Keep both eyes open behind your hand.'
+      : 'Now switch hands: cover your right eye to test the left.';
+    $('#pauseGo').textContent = eye === 'R' ? 'Start right eye' : 'Start left eye';
+    try { $('#pauseGo').focus(); } catch (e) {}
+  }
+  $('#pauseGo').addEventListener('click', function(){ beginEye(st.eye); });
+  $('#quit').addEventListener('click', function(){ closeTest(); openSetup(); });
+
+  function beginEye(eye){
+    $('#pause').hidden = true;
+    $('#pad').hidden = false;
+    var stage = $('#stage');
+    var r = rangeFor(stage.clientWidth, stage.clientHeight);
+    T = {
+      eye: eye, phase: 'screen',
+      L: Math.max(r.minL, Math.min(r.maxL, 6)),
+      maxL: r.maxL, minL: r.minL, maxSize: r.maxSize,
+      startLine: null, firstLine: true, n: 0, c: 0, total: 0,
+      dir: null, busy: false, topFail: false, bottomPass: false
+    };
+    if (st.mode === 'voice') startVoice(); else micMsg('');
+    present();
+  }
+  function pickDir(prev){
+    var d = ['up', 'right', 'down', 'left'], x;
+    do { x = d[Math.floor(Math.random() * 4)]; } while (x === prev && Math.random() < 0.7);
+    return x;
+  }
+  function present(){
+    T.dir = pickDir(T.dir);
+    var size = sizePx(T.L);
+    var bars = size * 14 / 5 <= T.maxSize;
+    var svg = $('#opto');
+    svg.setAttribute('viewBox', bars ? '-4.5 -4.5 14 14' : '-0.5 -0.5 6 6');
+    var s = size * (bars ? 14 / 5 : 6 / 5);
+    svg.style.width = s + 'px';
+    svg.style.height = s + 'px';
+    $('#bars').style.display = bars ? '' : 'none';
+    $('#eG').setAttribute('transform', 'rotate(' + ROT[T.dir] + ' 2.5 2.5)');
+    svg.classList.remove('blank');
+    T.busy = false;
+    $('#testProg').textContent = T.phase === 'screen'
+      ? 'Finding your starting size'
+      : 'Line ' + fmtSnellen(T.L / 10) + ', letter ' + (T.n + 1) + ' of 5';
+  }
+  function answer(a){
+    if (!T || T.busy || !$('#pause').hidden) return;
+    T.busy = true;
+    try { if (navigator.vibrate) navigator.vibrate(12); } catch (e) {}
+    var ok = (a === T.dir);
+    $('#opto').classList.add('blank');
+    setTimeout(function(){ if (T) step(ok); }, 280);
+  }
+  function beginLines(start){
+    T.phase = 'lines'; T.startLine = start; T.L = start;
+    T.n = 0; T.c = 0; T.total = 0; T.firstLine = true;
+    present();
+  }
+  function step(ok){
+    if (T.phase === 'screen') {
+      // quick descent with one E per size, then full lines from two sizes above the first miss
+      if (ok && T.L > T.minL) { T.L--; present(); return; }
+      beginLines(Math.min(T.maxL, T.L + 2));
+      return;
+    }
+    T.n++;
+    if (ok) T.c++;
+    if (T.n < 5) { present(); return; }
+    var passed = T.c >= 3;
+    if (T.firstLine && !passed && T.L < T.maxL) { beginLines(Math.min(T.maxL, T.L + 2)); return; }
+    if (T.firstLine && !passed) T.topFail = true;
+    T.total += T.c;
+    T.firstLine = false;
+    if (passed && T.L > T.minL) { T.L--; T.n = 0; T.c = 0; present(); return; }
+    if (passed && T.L === T.minL) T.bottomPass = true;
+    finishEye();
+  }
+  function finishEye(){
+    // letter-by-letter scoring, 0.02 logMAR per letter
+    var lm = Math.round((T.startLine / 10 + 0.1 - 0.02 * T.total) * 100) / 100;
+    st.results[T.eye] = { lm: lm, topFail: T.topFail, bottomPass: T.bottomPass };
+    var eye = T.eye;
+    if (eye === 'R') pauseFor('L'); else finishTest();
+  }
+  function finishTest(){
+    closeTest();
+    var e = {
+      t: Date.now(), corr: st.corr, d: Math.round(st.distMm), unit: st.unit,
+      R: st.results.R.lm, L: st.results.L.lm
+    };
+    var notes = compare(e);
+    store.history.push(e);
+    if (store.history.length > 40) store.history = store.history.slice(-40);
+    persist();
+    st.last = e;
+    renderResult(e, notes);
+    show('result');
+  }
+
+  // ---------- input ----------
+  $$('#pad button').forEach(function(b){
+    b.addEventListener('click', function(){ answer(b.getAttribute('data-dir')); });
+  });
+  document.addEventListener('keydown', function(ev){
+    if ($('#test').hidden) return;
+    if (ev.key === 'Escape') { $('#quit').click(); return; }
+    if (!$('#pause').hidden) return;
+    var map = { ArrowUp:'up', ArrowDown:'down', ArrowLeft:'left', ArrowRight:'right' };
+    if (map[ev.key]) { ev.preventDefault(); answer(map[ev.key]); }
+    else if (ev.key === ' ' || ev.key === 'Spacebar') { ev.preventDefault(); answer('none'); }
+  });
+  var sw = null, stageEl = $('#stage');
+  stageEl.addEventListener('pointerdown', function(ev){ sw = { x: ev.clientX, y: ev.clientY }; });
+  stageEl.addEventListener('pointercancel', function(){ sw = null; });
+  stageEl.addEventListener('pointerup', function(ev){
+    if (!sw) return;
+    var dx = ev.clientX - sw.x, dy = ev.clientY - sw.y;
+    sw = null;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < 40) return;
+    answer(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'));
+  });
+
+  // ---------- voice ----------
+  var rec = null, voiceToken = 0;
+  var WORDS = {
+    up: ['up', 'top', 'upward', 'upwards', 'north', 'app'],
+    down: ['down', 'bottom', 'downward', 'downwards', 'south', 'dawn'],
+    left: ['left', 'lift', 'west', 'laughed'],
+    right: ['right', 'write', 'rite', 'wright', 'east', 'alright', 'ride'],
+    none: ['pass', 'skip', 'blank', 'unsure', 'dunno']
+  };
+  // All direction words in a transcript, in order
+  function dirsIn(t){
+    t = (t || '').toLowerCase().replace(/can'?t tell|cannot tell|don'?t know|not sure/g, ' pass ');
+    var w = t.split(/[^a-z']+/).filter(Boolean), out = [];
+    for (var i = 0; i < w.length; i++) {
+      for (var k in WORDS) {
+        if (WORDS[k].indexOf(w[i]) !== -1) { out.push(k); break; }
+      }
+    }
+    return out;
+  }
+  var VOICE_ERR = {
+    'not-allowed': 'Microphone access was denied. Allow the microphone for this page and try again. Inside the Claude app this may not be possible, so open the link in Safari.',
+    'service-not-allowed': 'Speech recognition isn’t allowed here. On iPhone, open the link in Safari and make sure Dictation is on (Settings, General, Keyboard).',
+    'audio-capture': 'No microphone is available. Another app may be using it.',
+    'network': 'Speech recognition needs an internet connection.',
+    'language-not-supported': 'English speech recognition isn’t available on this device.'
+  };
+  function micMsg(t){ var m = $('#mic'); m.textContent = t; m.hidden = !t; }
+  // Continuous listening that acts on in-progress results, since iPhone Safari rarely sends final ones mid-session
+  function listen(onDir, onStatus, onHeard){
+    stopVoice();
+    if (!SR) { onStatus('Speech recognition isn’t supported in this viewer. Open the link in Safari or Chrome.', 'error'); return; }
+    var token = ++voiceToken, used = 0, restarting = false, r;
+    try {
+      r = new SR();
+      rec = r;
+      r.lang = 'en-US';
+      r.continuous = true;
+      r.interimResults = true;
+      r.onstart = function(){
+        if (token !== voiceToken) return;
+        used = 0; restarting = false;
+        onStatus('Listening. Say up, down, left, right, or pass.', 'ok');
+      };
+      r.onresult = function(ev){
+        if (token !== voiceToken) return;
+        var text = '';
+        for (var i = 0; i < ev.results.length; i++) text += ' ' + ev.results[i][0].transcript;
+        text = text.trim();
+        if (onHeard) onHeard(text);
+        var dirs = dirsIn(text);
+        while (used < dirs.length) { used++; onDir(dirs[used - 1], text); }
+      };
+      r.onerror = function(ev){
+        if (token !== voiceToken) return;
+        if (ev.error === 'no-speech' || ev.error === 'aborted') return;
+        voiceToken++;
+        if (restarting) { onStatus('Listening paused.', 'paused'); return; }
+        onStatus(VOICE_ERR[ev.error] || ('Voice stopped (' + ev.error + '). Use the arrows or a helper.'), 'error');
+      };
+      r.onend = function(){
+        if (token !== voiceToken) return;
+        restarting = true;
+        try { r.start(); } catch (e) { voiceToken++; onStatus('Listening paused.', 'paused'); }
+      };
+      r.start();
+    } catch (err) {
+      voiceToken++;
+      onStatus('Voice couldn’t start here. Open the link in Safari or Chrome.', 'error');
+    }
+  }
+  function stopVoice(){
+    voiceToken++;
+    if (rec) { try { rec.abort(); } catch (e) { try { rec.stop(); } catch (e2) {} } }
+    rec = null;
+    micMsg('');
+    $('#micResume').hidden = true;
+  }
+  function startVoice(){
+    listen(function(d){ answer(d); }, function(msg, kind){
+      micMsg(msg);
+      $('#micResume').hidden = (kind !== 'paused');
+    });
+  }
+  $('#micResume').addEventListener('click', function(){ startVoice(); });
+
+  // Voice check on the setup screen
+  var voiceTesting = false;
+  function updateVoiceUI(){
+    var on = document.querySelector('input[name=mode]:checked').value === 'voice';
+    $('#voiceTest').hidden = !on;
+    if (!on) endVoiceTest();
+  }
+  function endVoiceTest(){
+    if (!voiceTesting) return;
+    voiceTesting = false;
+    stopVoice();
+    $('#voiceTestBtn').textContent = 'Test voice';
+  }
+  $$('input[name=mode]').forEach(function(r){ r.addEventListener('change', updateVoiceUI); });
+  $('#voiceTestBtn').addEventListener('click', function(){
+    var btn = this, out = $('#voiceTestOut');
+    if (voiceTesting) { endVoiceTest(); out.className = 'hint'; out.textContent = 'Voice test stopped.'; return; }
+    voiceTesting = true;
+    btn.textContent = 'Stop voice test';
+    out.className = 'hint';
+    out.textContent = 'Starting the microphone…';
+    listen(function(d, text){
+      out.className = 'hint';
+      out.textContent = 'Heard “' + text.slice(-60) + '” and read it as ' + (d === 'none' ? 'can’t tell' : d) + '. Voice answers are working.';
+    }, function(msg, kind){
+      if (kind === 'ok') {
+        if (out.textContent.indexOf('Starting') === 0) out.textContent = 'Listening. Say “left” or “up”.';
+        return;
+      }
+      voiceTesting = false;
+      btn.textContent = 'Test voice';
+      out.className = 'hint bad';
+      out.textContent = kind === 'paused' ? 'Listening stopped. Tap Test voice to try again.' : msg;
+    }, function(text){
+      out.className = 'hint';
+      out.textContent = 'Heard “' + text.slice(-60) + '”';
+    });
+  });
+
+  // ---------- results ----------
+  function compare(e){
+    var out = {};
+    ['R', 'L'].forEach(function(eye){
+      var key = eye + '|' + e.corr;
+      var b = store.baselines[key];
+      var lm = e[eye];
+      if (!b) {
+        store.baselines[key] = { lm: lm, t: e.t };
+        out[eye] = { flag:false, text:'Saved as your baseline for future checks.' };
+        return;
+      }
+      var diff = Math.round((lm - b.lm) * 100) / 100;
+      var when = fmtDate(b.t);
+      var lines = Math.round(Math.abs(diff) * 10);
+      if (diff >= 0.2) out[eye] = { flag:true, text:'About ' + lines + ' lines worse than your baseline from ' + when + '. Retest on another day; if it holds, book an eye exam.' };
+      else if (diff >= 0.1) out[eye] = { flag:false, text:'About a line below your baseline from ' + when + ', which is within normal day-to-day variation.' };
+      else if (diff <= -0.2) out[eye] = { flag:false, text:'About ' + lines + ' lines better than your baseline from ' + when + '. If you have new glasses or contacts, make these results your new baseline.' };
+      else out[eye] = { flag:false, text:'In line with your baseline from ' + when + '.' };
+    });
+    return out;
+  }
+  function verdict(r, corr){
+    var limit = st.unit === 'ft' ? '20/40' : '6/12';
+    var v;
+    if (r.topFail) v = { cls:'alert', title:'Very blurry', text:'You couldn’t read the largest size this screen shows at this distance. Book an eye exam.' };
+    else if (r.lm <= 0.1) v = { cls:'ok', title:'Sharp', text: corr === 'none' ? 'Clear distance vision without correction.' : 'Your current correction looks right for distance.' };
+    else if (r.lm <= 0.3) v = { cls:'warn', title:'A little blurry', text: corr === 'none'
+      ? 'Retest on another day. If it stays here, an eye exam can tell whether glasses would help.'
+      : 'Retest on another day. If it stays here, an updated prescription may help.' };
+    else v = { cls:'alert', title:'Blurry', text:'Worse than ' + limit + ', the level many US states require for driving without restrictions. Book an eye exam.' };
+    if (r.bottomPass) v.text += ' This was the smallest size the screen can show, so your vision may be even sharper.';
+    return v;
+  }
+  function eyeBlock(name, r, note, corr){
+    var v = verdict(r, corr);
+    var html = '<article class="eye ' + v.cls + '">' +
+      '<h3>' + name + '</h3>' +
+      '<p class="snellen">' + fmtSnellen(r.lm) + '</p>' +
+      '<p class="alt">' + altSnellen(r.lm) + ', logMAR ' + r.lm.toFixed(2) + '</p>' +
+      '<p class="verdict">' + v.title + '</p>' +
+      '<p class="note">' + v.text + '</p>';
+    if (note) html += '<p class="note' + (note.flag ? ' flag' : '') + '">' + note.text + '</p>';
+    return html + '</article>';
+  }
+  function renderResult(e, notes){
+    var body = $('#resultBody');
+    $('#resultTitle').textContent = e ? 'Your results' : 'Past results';
+    $('#resultActions').hidden = !e;
+    var bb = $('#baseBtn');
+    bb.disabled = false;
+    bb.textContent = 'Make these my new baseline';
+    if (e) {
+      var html = '<p class="meta">Checked ' + fmtDate(e.t) + ' ' + CORR_LABEL[e.corr] + ', ' + fmtDist(e.d, e.unit) + ' from the screen.</p>';
+      html += '<div class="eyes">' +
+        eyeBlock('Right eye', st.results.R, notes && notes.R, e.corr) +
+        eyeBlock('Left eye', st.results.L, notes && notes.L, e.corr) +
+        '</div>';
+      var gap = Math.abs(e.R - e.L);
+      if (gap >= 0.2) {
+        html += '<p class="callout">Your eyes differ by about ' + Math.round(gap * 10) + ' lines. A gap this size is worth mentioning at your next eye exam.</p>';
+      }
+      body.innerHTML = html;
+    } else {
+      body.innerHTML = '';
+    }
+    renderHistory();
+  }
+  function renderHistory(){
+    var hb = $('#historyBody');
+    if (!store.history.length) { hb.innerHTML = '<p class="empty">No saved results yet.</p>'; return; }
+    var rows = store.history.slice(-10).reverse().map(function(h){
+      return '<tr><td>' + fmtDate(h.t) + '</td><td>' + (CORR_SHORT[h.corr] || '') + '</td><td>' + fmtSnellen(h.R) + '</td><td>' + fmtSnellen(h.L) + '</td></tr>';
+    }).join('');
+    hb.innerHTML = '<div class="tablewrap"><table><thead><tr><th>Date</th><th>Wearing</th><th>Right</th><th>Left</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+  }
+  $('#againBtn').addEventListener('click', openSetup);
+  $('#homeBtn').addEventListener('click', openIntro);
+  $('#baseBtn').addEventListener('click', function(){
+    var e = st.last;
+    if (!e) return;
+    store.baselines['R|' + e.corr] = { lm: e.R, t: e.t };
+    store.baselines['L|' + e.corr] = { lm: e.L, t: e.t };
+    persist();
+    this.textContent = 'Saved as your new baseline';
+    this.disabled = true;
+  });
+  var clearArmed = false;
+  $('#clearBtn').addEventListener('click', function(){
+    if (!clearArmed) {
+      clearArmed = true;
+      this.textContent = 'Tap again to clear all saved results';
+      var btn = this;
+      setTimeout(function(){ clearArmed = false; btn.textContent = 'Clear saved results'; }, 4000);
+      return;
+    }
+    clearArmed = false;
+    store.history = [];
+    store.baselines = {};
+    persist();
+    this.textContent = 'Saved results cleared';
+    st.last = null;
+    renderResult(null, null);
+  });
+
+  openIntro();
+})();
+</script>
+</body>
+</html>
